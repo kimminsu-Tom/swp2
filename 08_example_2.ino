@@ -5,7 +5,7 @@
 
 // configurable parameters
 #define SND_VEL 346.0     // sound velocity at 24 celsius degree (unit: m/sec)
-#define INTERVAL 100      // sampling interval (unit: msec)
+#define INTERVAL 25      // sampling interval (unit: msec)
 #define PULSE_DURATION 10 // ultra-sound Pulse Duration (unit: usec)
 #define _DIST_MIN 100.0   // minimum distance to be measured (unit: mm)
 #define _DIST_MAX 300.0   // maximum distance to be measured (unit: mm)
@@ -29,36 +29,33 @@ void setup() {
 void loop() {
   float distance;
 
-  // wait until next sampling time. 
-  // millis() returns the number of milliseconds since the program started.
-  //    will overflow after 50 days.
   if (millis() < (last_sampling_time + INTERVAL))
     return;
 
-  distance = USS_measure(PIN_TRIG, PIN_ECHO); // read distance
+  distance = USS_measure(PIN_TRIG, PIN_ECHO);
 
   if ((distance == 0.0) || (distance > _DIST_MAX)) {
-      distance = _DIST_MAX + 10.0;    // Set Higher Value
-      digitalWrite(PIN_LED, 1);       // LED OFF
+      distance = _DIST_MAX + 10.0;
+      analogWrite(PIN_LED, 0); // Set LED brightness to minimum
   } else if (distance < _DIST_MIN) {
-      distance = _DIST_MIN - 10.0;    // Set Lower Value
-      digitalWrite(PIN_LED, 1);       // LED OFF
-  } else {    // In desired Range
-      digitalWrite(PIN_LED, 0);       // LED ON      
+      distance = _DIST_MIN - 10.0;
+      analogWrite(PIN_LED, 255); // Set LED brightness to maximum
+  } else if ((distance >= 100.0) && (distance <= 200.0)) {
+      analogWrite(PIN_LED, 128); // Set LED brightness to 50%
+  } else if ((distance >= 250.0) && (distance <= 300.0)) {
+      analogWrite(PIN_LED, 128); // Set LED brightness to 50%
+  } else {
+      analogWrite(PIN_LED, 0); // Default to LED off
   }
 
-  // output the distance to the serial port
   Serial.print("Min:");        Serial.print(_DIST_MIN);
   Serial.print(",distance:");  Serial.print(distance);
   Serial.print(",Max:");       Serial.print(_DIST_MAX);
   Serial.println("");
   
-  // do something here
-  delay(50); // Assume that it takes 50ms to do something.
-  
-  // update last sampling time
   last_sampling_time += INTERVAL;
 }
+
 
 // get a distance reading from USS. return value is in millimeter.
 float USS_measure(int TRIG, int ECHO)
